@@ -1,19 +1,28 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 import joblib
+import os
 
 app = Flask(__name__)
 
+# Get absolute path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Load model and columns
-model = joblib.load("../model/churn_model.pkl")
-model_columns = joblib.load("../model/model_columns.pkl")
+model = joblib.load(os.path.join(BASE_DIR, "../model/churn_model.pkl"))
+model_columns = joblib.load(os.path.join(BASE_DIR, "../model/model_columns.pkl"))
+
+@app.route("/")
+def home():
+    return jsonify({
+        "message": "Customer Churn Prediction API is running!"
+    })
 
 @app.route("/predict", methods=["POST"])
 def predict():
 
     data = request.json
 
-    # Create dataframe from input
     df = pd.DataFrame([data])
 
     # Add missing columns
@@ -21,7 +30,6 @@ def predict():
         if col not in df.columns:
             df[col] = 0
 
-    # Keep correct column order
     df = df[model_columns]
 
     prediction = model.predict(df)
@@ -31,4 +39,4 @@ def predict():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
